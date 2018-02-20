@@ -20,7 +20,7 @@ public class Sender {
     }
     
     try {
-      in = new BufferedReader(new FileReader("/Users/richard/eclipse-workspace/CP372-A2/src/test.txt"));
+      in = new BufferedReader(new FileReader("test.txt"));
     } catch (FileNotFoundException e) {
       System.err.println("Could not open test file.");
     }
@@ -29,8 +29,8 @@ public class Sender {
     // receiverAddress = InetAddress.getByName(args[0]);
     receiverAddress = InetAddress.getLocalHost(); // For now
 
-    senderPort = Integer.valueOf(args[1]); //arbitrarily chosen
-    receiverPort = Integer.valueOf(args[2]); //arbitrarily chosen
+    senderPort = Integer.valueOf(args[2]); //arbitrarily chosen
+    receiverPort = Integer.valueOf(args[1]); //arbitrarily chosen
     timeout = Integer.valueOf(args[4]);
 
     socket = new DatagramSocket();
@@ -44,6 +44,7 @@ public class Sender {
       byte[] bytes = str.getBytes(); // Will not always contain the full 124 bytes because smaller chars are encoded with only 1 byte.
       System.out.println("Length of byte buffer: " + bytes.length); //For testing
       DatagramPacket packet = new DatagramPacket(bytes, bytes.length, receiverAddress, receiverPort);
+			System.out.println(bytes + " " + bytes.length + " " + receiverAddress + " " + receiverPort);
       socket.send(packet);
       try {
         Thread.sleep(timeout);
