@@ -7,14 +7,22 @@ public class Receiver {
 
   public static void main(String[] args) throws IOException {
     //        new ServerThread().start();
-    socket = new DatagramSocket(8888);
+    InetAddress senderAddress = InetAddress.getLocalHost();
+    int senderPort = 5555; //arbitrarily chosen
+    int receiverPort = 8888; //arbitrarily chosen
+    DatagramSocket receiverSocket = new DatagramSocket(receiverPort);
+    DatagramSocket senderSocket = new DatagramSocket();
     System.out.println("Socket initiated");
 
     while(true) {
       byte[] buf = new byte[256];
       DatagramPacket packet = new DatagramPacket(buf, buf.length);
-      socket.receive(packet);
+      receiverSocket.receive(packet);
       System.out.println("I got a packet!!!!!!!!");
+
+      packet = new DatagramPacket(buf, buf.length, senderAddress, senderPort);
+      senderSocket.send(packet);
+      System.out.println("sending ACK to " + senderAddress + ":" + senderPort);
     }
     
   }
