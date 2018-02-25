@@ -47,11 +47,7 @@ public class Sender {
       {
         byte[] bytes = new byte[MAX_BYTES];
         
-       //Bitwise operations to turn segNum into byte[2]
-        bytes[0] = (byte) (segNum & 0xFF);
-        bytes[1] = (byte) ((segNum >> 8) & 0xFF);
-        System.out.println(bytes[0]);
-        System.out.println(bytes[1]);
+        prependSegNum(bytes,segNum);
         segNum += 1;
         
         //Make sure first two bytes are segment number and rest is data. Java makes things hard.
@@ -71,7 +67,12 @@ public class Sender {
       buf = new char[MAX_BYTES]; //Refresh the buffer for the next iteration.
     }
     //Send termination message
-    byte[] bytes = "DONE".getBytes();
+    byte[] bytes = new byte[6];
+    prependSegNum(bytes,segNum);
+    byte[] done = "DONE".getBytes();
+    for (int i = 2; i < bytes.length; i++)
+      bytes[i] = done[i - 2];
+    
     DatagramPacket packet = new DatagramPacket(bytes, bytes.length, receiverAddress, receiverPort);
     receiverSocket.send(packet);
     
@@ -80,6 +81,13 @@ public class Sender {
 
     receiverSocket.close();
     senderSocket.close();
+  }
+  
+  
+  //Bitwise operations to turn segNum into byte[2]
+  private static void prependSegNum(byte[] bytes, int segNum) {
+    bytes[0] = (byte) (segNum & 0xFF);
+    bytes[1] = (byte) ((segNum >> 8) & 0xFF);
   }
 }
 
