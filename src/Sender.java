@@ -36,31 +36,39 @@ public class Sender {
     senderSocket = new DatagramSocket(senderPort);
 
     char[] buf = new char[MAX_BYTES];
-    int offset = 0;
+    short offset = 0;
+    short segNum = 0;
 
-    // Keep trying to read MAX_BYTES chars at a time until we hit EOF
-    while (in.read(buf,0,MAX_BYTES) != -1) 
+    // First two bytes are reserved for segment number
+    while (in.read(buf,0,MAX_BYTES - 2) != -1) 
     {
       boolean ack = false;
       while (ack == false)
       {
-        byte[] bytes = new String(buf).getBytes();
-        buf = new char[MAX_BYTES]; //Refresh the buffer
+        byte[] bytes = new byte[MAX_BYTES];
+        
+       //Bitwise operations to turn segNum into byte[2]
+        bytes[0] = (byte) (segNum & 0xFF);
+        bytes[1] = (byte) ((segNum >> 8) & 0xFF);
+        System.out.println(bytes[0]);
+        System.out.println(bytes[1]);
+        segNum += 1;
+        
+        //Make sure first two bytes are segment number and rest is data. Java makes things hard.
+        byte[] str = new String(buf).getBytes();
+        for (int i = 2; i < MAX_BYTES; i++) {
+          bytes[i] = str[i - 2];
+        }
+        
         DatagramPacket packet = new DatagramPacket(bytes, bytes.length, receiverAddress, receiverPort);
 		System.out.println(bytes + " " + bytes.length + " " + receiverAddress + " " + receiverPort);
         receiverSocket.send(packet);
-        //try {
-          //socket.setSoTimeout(timeout);
-          packet = new DatagramPacket(bytes, bytes.length);
-          senderSocket.receive(packet);
-          System.out.println("packet recieved");
-          ack = true;
-        //} 
-        /*catch (InterruptedException e) 
-        { 
-
-        }*/
+        packet = new DatagramPacket(bytes, bytes.length);
+        senderSocket.receive(packet);
+        System.out.println("packet recieved. Segnum:"+segNum);
+        ack = true;
       }
+      buf = new char[MAX_BYTES]; //Refresh the buffer for the next iteration.
     }
     //Send termination message
     byte[] bytes = "DONE".getBytes();
