@@ -23,14 +23,8 @@ public class Receiver {
       DatagramPacket packet = new DatagramPacket(buf, buf.length);
       receiverSocket.receive(packet);
       System.out.println("Packet Received");
-
-      //Get segment number
-      ByteBuffer bb = ByteBuffer.wrap(Arrays.copyOfRange(buf, 0, 2));
-      bb.order(ByteOrder.LITTLE_ENDIAN);
-      short segNum = bb.getShort();
-      
-      System.out.println(segNum);
-      String str = new String(buf).substring(2); //Data payload
+ 
+      String str = new String(buf); //Data payload
       
       if (!UNRELIABLE || new Random().nextInt(100) % 10 != 0) {
         if (str.trim().equals("DONE")) {
@@ -48,6 +42,7 @@ public class Receiver {
       }
     }
     System.out.println(file);
-    
+    senderSocket.close();
+    receiverSocket.close();
   }
 }

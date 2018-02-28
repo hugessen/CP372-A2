@@ -1,5 +1,4 @@
 import java.net.*;
-import java.util.*;
 import java.io.*;
 
 public class Sender {
@@ -36,23 +35,11 @@ public class Sender {
     senderSocket.setSoTimeout( 1000 );
 
     char[] buf = new char[MAX_BYTES];
-    short offset = 0;
-    short segNum = 0;
-    short lastConfirmedSegnum = 0;
 
     // First two bytes are reserved for segment number
     while (in.read(buf,0,MAX_BYTES - 2) != -1) 
     {
-      byte[] sendData = new byte[MAX_BYTES];
-      
-      prependSegNum(sendData,segNum);
-      segNum++;
-      
-      //Fill buffer starting at index 2
-      byte[] str = new String(buf).getBytes();
-      for (int i = 2; i < MAX_BYTES; i++) {
-        sendData[i] = str[i - 2];
-      }
+      byte[] sendData = new String(buf).getBytes();
       
       boolean hasTimeout = true;
       while (hasTimeout) {
@@ -67,7 +54,8 @@ public class Sender {
           DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
           senderSocket.receive(receivePacket);
           hasTimeout = false; //Can exit loop once ACK has been received.
-        } catch (SocketTimeoutException e) {
+        } 
+        catch (SocketTimeoutException e) {
           System.out.println("RINGG! Time out! Let's send that data again");
         }
 
@@ -77,12 +65,7 @@ public class Sender {
     }
     
     //Send termination message
-    byte[] bytes = new byte[6];
-    prependSegNum(bytes,segNum);
-    byte[] done = "DONE".getBytes();
-    for (int i = 2; i < bytes.length; i++)
-      bytes[i] = done[i - 2];
-    
+    byte[] bytes = "DONE".getBytes();
     DatagramPacket packet = new DatagramPacket(bytes, bytes.length, receiverAddress, receiverPort);
     receiverSocket.send(packet);
     
@@ -91,12 +74,6 @@ public class Sender {
 
     receiverSocket.close();
     senderSocket.close();
-  }
-  
-  //Bitwise operations to turn segNum into byte[2]
-  private static void prependSegNum(byte[] bytes, int segNum) {
-    bytes[0] = (byte) (segNum & 0xFF);
-    bytes[1] = (byte) ((segNum >> 8) & 0xFF);
   }
 }
 
