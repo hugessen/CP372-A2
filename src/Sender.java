@@ -23,8 +23,7 @@ public class Sender {
     } catch (FileNotFoundException e) {
       System.err.println("Could not open test file.");
     }
-
-
+    
     // receiverAddress = InetAddress.getByName(args[0]);
     receiverAddress = InetAddress.getLocalHost(); // For now
 
@@ -34,38 +33,49 @@ public class Sender {
 
     receiverSocket = new DatagramSocket();
     senderSocket = new DatagramSocket(senderPort);
+    senderSocket.setSoTimeout( 1000 );
 
     char[] buf = new char[MAX_BYTES];
     short offset = 0;
     short segNum = 0;
+    short lastConfirmedSegnum = 0;
 
     // First two bytes are reserved for segment number
     while (in.read(buf,0,MAX_BYTES - 2) != -1) 
     {
-      boolean ack = false;
-      while (ack == false)
-      {
-        byte[] bytes = new byte[MAX_BYTES];
-        
-        prependSegNum(bytes,segNum);
-        segNum += 1;
-        
-        //Make sure first two bytes are segment number and rest is data. Java makes things hard.
-        byte[] str = new String(buf).getBytes();
-        for (int i = 2; i < MAX_BYTES; i++) {
-          bytes[i] = str[i - 2];
-        }
-        
-        DatagramPacket packet = new DatagramPacket(bytes, bytes.length, receiverAddress, receiverPort);
-		System.out.println(bytes + " " + bytes.length + " " + receiverAddress + " " + receiverPort);
-        receiverSocket.send(packet);
-        packet = new DatagramPacket(bytes, bytes.length);
-        senderSocket.receive(packet);
-        System.out.println("packet recieved. Segnum:"+segNum);
-        ack = true;
+      byte[] sendData = new byte[MAX_BYTES];
+      
+      prependSegNum(sendData,segNum);
+      segNum++;
+      
+      //Fill buffer starting at index 2
+      byte[] str = new String(buf).getBytes();
+      for (int i = 2; i < MAX_BYTES; i++) {
+        sendData[i] = str[i - 2];
       }
+      
+      boolean hasTimeout = true;
+      while (hasTimeout) {
+        try {
+          //Attempt to send packet
+          DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, receiverAddress, receiverPort);
+          System.out.println(sendData + " " + sendData.length + " " + receiverAddress + " " + receiverPort);
+          receiverSocket.send(sendPacket);
+          
+          //Receive the ACK
+          byte[] receiveData = new byte[MAX_BYTES];
+          DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+          senderSocket.receive(receivePacket);
+          hasTimeout = false; //Can exit loop once ACK has been received.
+        } catch (SocketTimeoutException e) {
+          System.out.println("RINGG! Time out! Let's send that data again");
+        }
+
+      }
+
       buf = new char[MAX_BYTES]; //Refresh the buffer for the next iteration.
     }
+    
     //Send termination message
     byte[] bytes = new byte[6];
     prependSegNum(bytes,segNum);
@@ -82,7 +92,6 @@ public class Sender {
     receiverSocket.close();
     senderSocket.close();
   }
-  
   
   //Bitwise operations to turn segNum into byte[2]
   private static void prependSegNum(byte[] bytes, int segNum) {

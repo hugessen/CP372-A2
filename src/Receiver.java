@@ -6,6 +6,7 @@ import java.util.*;
 
 public class Receiver {
   static DatagramSocket socket;
+  static final boolean UNRELIABLE = true;
 
   public static void main(String[] args) throws IOException {
     InetAddress senderAddress = InetAddress.getLocalHost();
@@ -13,7 +14,6 @@ public class Receiver {
     int receiverPort = 8888; //arbitrarily chosen
     boolean finished = false;
     String file = new String("");
-    int highestSegmentSeen = -1;
     DatagramSocket receiverSocket = new DatagramSocket(receiverPort);
     DatagramSocket senderSocket = new DatagramSocket();
     System.out.println("Socket initiated");
@@ -30,11 +30,9 @@ public class Receiver {
       short segNum = bb.getShort();
       
       System.out.println(segNum);
-      String str = new String(buf);
-      str = str.substring(2);
+      String str = new String(buf).substring(2); //Data payload
       
-      if (segNum == highestSegmentSeen + 1) {
-        highestSegmentSeen += 1;
+      if (!UNRELIABLE || new Random().nextInt(100) % 10 != 0) {
         if (str.trim().equals("DONE")) {
           finished = true;
         }
@@ -47,7 +45,6 @@ public class Receiver {
       }
       else {
         System.out.println("Packet drop");
-        // Do nothing. I think.
       }
     }
     System.out.println(file);
