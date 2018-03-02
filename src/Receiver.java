@@ -23,7 +23,7 @@ public class Receiver {
     }
     catch (UnknownHostException e)
     {
-
+      // doesn't really matter since the user can input it anyways, just used to autofill input field
     }
     javax.swing.SwingUtilities.invokeLater(new Runnable() {
             public void run() {
@@ -114,7 +114,7 @@ public class Receiver {
           System.out.println("Error: invalid port number");
           return;
         }
-        if (senderPort < 0 || senderPort > 65535 || receiverPort < 0 || senderPort > 65535)
+        if (senderPort < 0 || senderPort > 65535 || receiverPort < 0 || receiverPort > 65535)
         {
           System.out.println("Error: invalid port number");
           return;
@@ -170,32 +170,36 @@ public class Receiver {
  
       String str = new String(buf); //Data payload
       
-      if (!unreliable || packetDropCounter != 0) {
-        if (str.trim().equals("DONE")) {
-          finished = true;
-        }
-        else {
+      
+      if (str.trim().equals("DONE")) 
+      {
+        finished = true;
+      }
+      else 
+      {
+        if (!unreliable || packetDropCounter != 0) 
+        {
           file += str.replace("\0", "");
           if (unreliable)
           {
             packetDropCounter -= 1; 
+          } 
+          packet = new DatagramPacket(buf, buf.length, senderAddress, senderPort);
+          try
+          {
+            senderSocket.send(packet);
+            System.out.println("sending ACK to " + senderAddress + ":" + senderPort);
           }
-        } 
-        packet = new DatagramPacket(buf, buf.length, senderAddress, senderPort);
-        try
-        {
-          senderSocket.send(packet);
-          System.out.println("sending ACK to " + senderAddress + ":" + senderPort);
+          catch (IOException e)
+          {
+            System.out.println("Error sending packet");
+            return;
+          }
         }
-        catch (IOException e)
-        {
-          System.out.println("Error sending packet");
-          return;
+        else {
+          System.out.println("Packet drop");
+          packetDropCounter = 10; // drop every 10th packet
         }
-      }
-      else {
-        System.out.println("Packet drop");
-        packetDropCounter = 10; // drop every 10th packet
       }
     }
     writeFile(file);
