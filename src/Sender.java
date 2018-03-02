@@ -7,28 +7,61 @@ public class Sender {
   static int senderPort, receiverPort, timeout;
   static DatagramSocket senderSocket, receiverSocket;
   static BufferedReader in;
+  static String inputFilename;
   final static int MAX_BYTES = 124;
 
-  public static void main(String[] richard) throws IOException {
-    String[] args = {"Not currently used","8888","5555","test.txt","500"}; //Hardcoding this stuff for now
-    
-    if (args.length != 5) {
-      System.out.println("Error: Wrong number of arguments");
-      return;
+  public static void main(String[] args) throws IOException {    
+    if (args.length != 5) 
+    {
+      
+      receiverAddress = InetAddress.getLocalHost();
+      receiverPort = 8888;
+      senderPort = 5555;
+      inputFilename = "test.txt";
+      timeout = 500;
+      System.out.println("No arguments selected, therefore values autoassigned\nReceiver address set to localhost: " + receiverAddress + ",\nReceiver port=8888,\nSender port=5555,\ninput filename=test.txt,\ntimeout=500\n");
+      
+    }
+    else
+    {
+      try 
+      {
+        receiverPort = Integer.parseInt(args[1]); 
+        senderPort = Integer.parseInt(args[2]);        
+        timeout = Integer.parseInt(args[4]);
+      }
+      catch (Exception e)
+      {
+        System.out.println("Error: invalid port number or timeout");
+        return;
+      }
+      if (senderPort < 0 || senderPort > 65535 || receiverPort < 0 || receiverPort > 65535 || timeout < 1)
+      {
+        System.out.println("Error: invalid port number or timeout");
+        return;
+      }
+      try 
+      {
+        receiverAddress = InetAddress.getByName(args[0]);
+      }
+      catch (UnknownHostException e)
+      {
+        System.out.println("Error: invalid receiver host address");
+        return;
+      }
+
+      inputFilename = args[3];
     }
     
     try {
-      in = new BufferedReader(new FileReader("test.txt"));
+      in = new BufferedReader(new FileReader(inputFilename));
     } catch (FileNotFoundException e) {
-      System.err.println("Could not open test file.");
+      System.err.println("Error: could not open test file.");
+      return;
     }
     
     // receiverAddress = InetAddress.getByName(args[0]);
-    receiverAddress = InetAddress.getLocalHost(); // For now
-
-    senderPort = Integer.valueOf(args[2]); //arbitrarily chosen
-    receiverPort = Integer.valueOf(args[1]); //arbitrarily chosen
-    timeout = Integer.valueOf(args[4]);
+     // For now
 
     receiverSocket = new DatagramSocket();
     senderSocket = new DatagramSocket(senderPort);
