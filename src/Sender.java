@@ -18,7 +18,7 @@ public class Sender {
     }
     
     try {
-      in = new BufferedReader(new FileReader("/Users/richard/eclipse-workspace/CP372-A2/src/test.txt"));
+      in = new BufferedReader(new FileReader("test.txt"));
     } catch (FileNotFoundException e) {
       System.err.println("Could not open test file.");
     }
